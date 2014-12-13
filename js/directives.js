@@ -29,11 +29,12 @@ angular.module('JSONedit', ['ui.sortable'])
     },
     link: function(scope, element, attributes) {
         var stringName = "Text";
+        var booleanName = "Boolean";
         var objectName = "Object";
         var arrayName = "Array";
         var refName = "Reference";
 
-        scope.valueTypes = [stringName, objectName, arrayName, refName];
+        scope.valueTypes = [stringName, booleanName, objectName, arrayName, refName];
         scope.sortableOptions = {
             axis: 'y'
         };
@@ -54,11 +55,15 @@ angular.module('JSONedit', ['ui.sortable'])
         //////
 
         var getType = function(obj) {
+            console.log('obj',JSON.stringify(obj));
             var type = Object.prototype.toString.call(obj);
+            console.log('type',type);
             if (type === "[object Object]") {
                 return "Object";
-            } else if(type === "[object Array]"){
+            } else if(type === "[object Array]") {
                 return "Array";
+            } else if(type === "[object Boolean]") {
+                return "Boolean";
             } else {
                 return "Literal";
             }
@@ -99,7 +104,8 @@ angular.module('JSONedit', ['ui.sortable'])
             }
         };
         scope.addItem = function(obj) {
-            if (getType(obj) == "Object") {
+            var type = getType(obj);
+            if (type == "Object") {
                 // check input for key
                 if (scope.keyName == undefined || scope.keyName.length == 0){
                     alert("Please fill in a name");
@@ -118,6 +124,8 @@ angular.module('JSONedit', ['ui.sortable'])
                     switch(scope.valueType) {
                         case stringName: obj[scope.keyName] = scope.valueName ? scope.possibleNumber(scope.valueName) : "";
                                         break;
+                        case booleanName: obj[scope.keyName] = scope.valueName;
+                                        break;
                         case objectName:  obj[scope.keyName] = {};
                                         break;
                         case arrayName:   obj[scope.keyName] = [];
@@ -130,10 +138,12 @@ angular.module('JSONedit', ['ui.sortable'])
                     scope.valueName = "";
                     scope.showAddKey = false;
                 }
-            } else if (getType(obj) == "Array") {
+            } else if (type == "Array") {
                 // add item to array
                 switch(scope.valueType) {
                     case stringName: obj.push(scope.valueName ? scope.valueName : "");
+                                    break;
+                    case booleanName: obj.push(scope.valueName);
                                     break;
                     case objectName:  obj.push({});
                                     break;
@@ -144,6 +154,8 @@ angular.module('JSONedit', ['ui.sortable'])
                 }
                 scope.valueName = "";
                 scope.showAddKey = false;
+            } else if (type == "Boolean") {
+                obj[scope.keyName] = scope.valueName;
             } else {
                 console.error("object to add to was " + obj);
             }
@@ -186,6 +198,8 @@ angular.module('JSONedit', ['ui.sortable'])
                 // input value
                 + '<span ng-show="$parent.valueType == \''+stringName+'\'"> : <input type="text" placeholder="Value" '
                     + 'class="form-control input-sm addItemValueInput" ng-model="$parent.valueName" ui-keyup="{\'enter\':\'addItem(child)\'}"/></span> '
+                + '<span ng-show="$parent.valueType == \''+booleanName+'\'"> : <input type="checkbox" '
+                    + 'class="form-control input-sm" ng-model="$parent.valueName"/></span> '
                 // Add button
                 + '<button class="btn btn-primary btn-sm" ng-click="addItem(child)">Add</button> '
                 + '<button class="btn btn-default btn-sm" ng-click="$parent.showAddKey=false">Cancel</button>'
